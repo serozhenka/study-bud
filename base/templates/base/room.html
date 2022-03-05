@@ -1,0 +1,6 @@
+{% extends 'base/base.html' %}
+
+{% block content %}
+    <h1><a href="{% url 'room' room.id %}">{{ room.name }}</a></h1>
+    <div>{{ room.description }}</div>
+{% endblock %}
