@@ -5,7 +5,7 @@ from django.contrib.auth.models import User
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
-from django.db.models import Q
+from django.db.models import Q, Count
 from .models import Room, Topic, Message
 from .forms import RoomForm
 
@@ -37,6 +37,10 @@ def logoutUser(request):
     return redirect('home')
 
 def registerPage(request):
+
+    if request.user.is_authenticated:
+        return redirect('home')
+
     form = UserCreationForm()
 
     if request.method == "POST":
@@ -59,7 +63,7 @@ def home(request):
         Q(name__icontains=topicQuery) |
         Q(description__icontains=topicQuery)
     )
-    topics = Topic.objects.all()
+    topics = Topic.objects.all().annotate(count=Count('room')).order_by('-count')
     room_count = rooms.count()
     room_messages = Message.objects.filter(room__topic__name__icontains=topicQuery)
 
@@ -81,6 +85,7 @@ def room(request, pk):
             room=room_instance,
             body=request.POST.get('body')
         )
+
         room_instance.participants.add(request.user)
         return redirect("room", pk=room_instance.id)
 
@@ -88,16 +93,27 @@ def room(request, pk):
 
 @login_required(login_url='login')
 def create_room(request):
-    if request.method == "POST":
-        form = RoomForm(request.POST)
-        if form.is_valid():
-            form.save()
-            return redirect('home')
+    topics = Topic.objects.all()
 
-    return render(request, 'base/room_form.html', context={'form': RoomForm()})
+    if request.method == "POST":
+        topic_name = request.POST.get("topic")
+        topic, created = Topic.objects.get_or_create(name=topic_name)
+
+        room_instance = Room.objects.create(
+            host=request.user,
+            topic=topic,
+            name=request.POST.get('name'),
+            description=request.POST.get('description'),
+        )
+        room_instance.participants.add(request.user)
+
+        return redirect('room', pk=room_instance.id)
+
+    return render(request, 'base/room_form.html', context={'form': RoomForm(), 'topics': topics})
 
 @login_required(login_url='login')
 def update_room(request, pk):
+    topics = Topic.objects.all()
     room_instance = Room.objects.get(id=pk)
     form = RoomForm(instance=room_instance)
 
@@ -105,12 +121,18 @@ def update_room(request, pk):
         return HttpResponse("<h1>You are not allowed here</h1>")
 
     if request.method == "POST":
-        form = RoomForm(request.POST, instance=room_instance)
-        if form.is_valid():
-            form.save()
-            return redirect('home')
+        topic_name = request.POST.get("topic")
+        topic, created = Topic.objects.get_or_create(name=topic_name)
 
-    return render(request, 'base/room_form.html', context={'form': form})
+        room_instance.name = request.POST.get('name')
+        room_instance.topic = topic
+        room_instance.description = request.POST.get('description')
+
+        room_instance.save()
+
+        return redirect('room', pk=room_instance.id)
+
+    return render(request, 'base/room_form.html', context={'form': form, 'topics': topics, 'room': room_instance})
 
 @login_required(login_url='login')
 def delete_room(request, pk):
@@ -130,9 +152,24 @@ def delete_message(request, pk):
     room_id = message.room_id
 
     if request.user != message.user:
-        return HttpResponse("<h1>You are not allowed to delete someone message</h1>")
+        return HttpResponse("<h1>You are not allowed to delete someone's message</h1>")
 
     if request.method == "POST":
         message.delete()
         return redirect('room', pk=room_id)
     return render(request, 'base/delete.html', context={'obj': message})
+
+def profile(request, pk):
+    user = User.objects.get(id=pk)
+    rooms = user.room_set.all()
+    room_count = rooms.count()
+    room_messages = user.message_set.all()
+    topics = Topic.objects.all()
+
+    return render(request, 'base/profile.html', context={
+        'user': user,
+        'rooms': rooms,
+        'room_count': room_count,
+        'room_messages': room_messages,
+        'topics': topics,
+    })
