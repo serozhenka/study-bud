@@ -448,6 +448,16 @@ a {
   overflow: hidden;
 }
 
+.layout__box__update {
+  width: 90%;
+  max-width: 64rem;
+  min-height: 40rem;
+  background-color: var(--color-dark);
+  border-radius: 1rem;
+  box-shadow: 1px 1px 6px 3px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
 .layout__boxHeader {
   display: flex;
   padding: 1.5rem;
@@ -477,7 +487,7 @@ a {
   text-align: center;
 }
 
-.layout__body__auth, .layout__body__room {
+.layout__body__auth, .layout__body__room, .layout__body__update {
   margin: 3rem;
 }
 
