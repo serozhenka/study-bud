@@ -1192,3 +1192,20 @@ a {
   color: var(--color-main);
   font-weight: 1.4rem;
 }
+
+.messages {
+  text-align: center;
+  display: flex;
+  justify-content: center;
+  width: 80%;
+  margin: 3rem auto 0 auto;
+}
+
+.messages > div {
+  padding: 1.5rem 0 1.5rem 0;
+  background-color: #ec5c5c;
+  max-width: 48rem;
+  flex: 1;
+  border-radius: 1rem;
+  color: #2c2c2f;
+}

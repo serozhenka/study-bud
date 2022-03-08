@@ -20,12 +20,8 @@
                     </div>
                 </div>
                 <div class="layout__body__update">
-                    <form method="POST" class="form" action="">
+                    <form method="POST" class="form" action="" enctype="multipart/form-data">
                         {% csrf_token %}
-                        <div class="form__group">
-                            <label for="profile_pic">Avatar</label>
-                            <input id="profile_pic" name="profile_pic" type="file" />
-                        </div>
 
                         {% for field in form %}
                             <div class="form__group">
