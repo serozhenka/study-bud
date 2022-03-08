@@ -63,15 +63,17 @@ def home(request):
         Q(name__icontains=topicQuery) |
         Q(description__icontains=topicQuery)
     )
-    topics = Topic.objects.all().annotate(count=Count('room')).order_by('-count')
-    room_count = rooms.count()
-    room_messages = Message.objects.filter(room__topic__name__icontains=topicQuery)
+
+    topics = Topic.objects.all().annotate(count=Count('room')).order_by('-count')[0:5]
+    room_count = Room.objects.all().count()
+    room_messages = Message.objects.filter(room__topic__name__icontains=topicQuery)[0:5]
 
     return render(request, 'base/home.html', context={
                       'rooms': rooms,
                       'topics': topics,
                       'room_count': room_count,
-                      'room_messages': room_messages
+                      'room_messages': room_messages,
+                      'user': None,
                   })
 
 def room(request, pk):
@@ -162,9 +164,9 @@ def delete_message(request, pk):
 def profile(request, pk):
     user = User.objects.get(id=pk)
     rooms = user.room_set.all()
-    room_count = rooms.count()
-    room_messages = user.message_set.all()
-    topics = Topic.objects.all()
+    room_count = Room.objects.all().count()
+    room_messages = user.message_set.all()[0:5]
+    topics = Topic.objects.all().annotate(count=Count('room')).order_by('-count')
 
     return render(request, 'base/profile.html', context={
         'user': user,
@@ -185,3 +187,21 @@ def update_user(request):
             form.save()
             return redirect('profile', pk=user.id)
     return render(request, 'base/update_user.html', context={'form': form})
+
+def topicsPage(request):
+    topicQuery = request.GET.get("topicQuery") if request.GET.get('topicQuery') else ''
+    topics = Topic.objects.filter(name__icontains=topicQuery).annotate(count=Count('room')).order_by('-count')
+
+    room_count = Room.objects.filter(topic__in=topics).count()
+
+    return render(request, 'base/topics.html', context={'topics': topics, 'room_count': room_count})
+
+def activityPage(request):
+    userQuery = request.GET.get('userQuery') if request.GET.get('userQuery') else None
+
+    if userQuery:
+        room_messages = Message.objects.filter(user__username__exact=userQuery)
+    else:
+        room_messages = Message.objects.all()
+
+    return render(request, 'base/activity.html', context={'room_messages': room_messages})
