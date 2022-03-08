@@ -14,7 +14,7 @@ SECRET_KEY = 'django-insecure-eg-rtf_sx@!*ks#gvo==ko2_26^ab((x6cxhib=8$-k($69p#7
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = ['study-bud-project.herokuapp.com']
 
 
 # Application definition
